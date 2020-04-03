@@ -8,15 +8,15 @@ library(ggplot2)
 
 datadir <- dir_create("data")
 
-# Refresh the endmember file
-url <- paste0(
-  "https://files.osf.io/v1/resources/kp82c/providers/googledrive/",
-  "SSerbin_hypertrace_results/instrument_models/kougarok_ang20180815t203458_rfl_v2r2/",
-  "?zip="
-)
-outfile <- path(datadir, "endmembers.zip")
-download.file(url, outfile)
-unzip(outfile, exdir = datadir)
+## # Refresh the endmember file
+## url <- paste0(
+##   "https://files.osf.io/v1/resources/kp82c/providers/googledrive/",
+##   "SSerbin_hypertrace_results/instrument_models/kougarok_ang20180815t203458_rfl_v2r2/",
+##   "?zip="
+## )
+## outfile <- path(datadir, "endmembers.zip")
+## download.file(url, outfile)
+## unzip(outfile, exdir = datadir)
 
 statfiles <- dir_ls("data", type = "directory") %>%
   dir_ls(glob = "*statistics.csv")
