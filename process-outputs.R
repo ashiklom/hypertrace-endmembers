@@ -38,7 +38,9 @@ outliers <- dat %>%
   filter(r < 0.75)
 
 labels <- outliers %>%
-  mutate(label = glue::glue("az{az} zen{zen} vzen{vzen}"))
+  mutate(label = glue::glue(
+    "{substr(inversion, 0, 1)} az{az} zen{zen} vzen{vzen}"
+  ))
 
 dat_long <- dat %>%
   left_join(labels) %>%
@@ -51,14 +53,12 @@ dat_long <- dat %>%
 plt <- ggplot(dat_long) +
   aes(x = snr, y = value, fill = endmember) +
   geom_boxplot(outlier.shape = "x") +
-  ggrepel::geom_text_repel(aes(label = label), size = 2) +
+  ## ggrepel::geom_text_repel(aes(label = label), size = 2) +
   ## ggbeeswarm::geom_quasirandom(
   ##   cex = 1,
   ##   dodge.width = 0.8
   ## ) +
   facet_grid(vars(variable), scales = "free_y")
-if (interactive()) plt
-
 figdir <- dir_create("figures")
 ggsave(
   path(figdir, "endmembers.png"),
@@ -66,15 +66,29 @@ ggsave(
   width = 10, height = 11, dpi = 300
 )
 
-plt2 <- plt %+%
-  (anti_join(dat_long, outliers)) +
+plt2 <- ggplot(anti_join(dat_long, outliers)) +
+  aes(x = snr, y = value, fill = endmember) +
+  geom_boxplot(outlier.shape = NA) +
   ggbeeswarm::geom_quasirandom(
-    cex = 1,
+    cex = 0.2,
     dodge.width = 0.8
-  )
-
+  ) +
+  facet_grid(vars(variable), scales = "free_y")
 ggsave(
   path(figdir, "endmembers-nooutliers.png"),
   plt2,
   width = 10, height = 11, dpi = 300
 )
+
+##################################################
+# Do some other summary stats.
+if (FALSE){
+
+  plt
+
+  ggplot(dat) +
+    aes(x = zen, y = az, color = bias) +
+    geom_jitter(width = 5, height = 5) +
+    scale_color_gradient(low = "green4", high = "red2")
+
+}
