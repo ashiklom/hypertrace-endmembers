@@ -32,7 +32,7 @@ dat_raw <- map_dfr(statfiles, read_csv, .id = "file", col_types = statcols)
 
 dat <- dat_raw %>%
   mutate(parentdir = path_file(path_dir(file))) %>%
-  extract(parentdir, c("endmember", "atm"), "^(.*)_endmembers_(.*)")
+  extract(parentdir, "endmember", "^(.*)_endmembers_.*")
 
 outliers <- dat %>%
   filter(r < 0.75)
@@ -78,6 +78,24 @@ ggsave(
   path(figdir, "endmembers-nooutliers.png"),
   plt2,
   width = 10, height = 11, dpi = 300
+)
+
+byatm <- dat_long %>%
+  ## filter(atm == 3) %>%
+  anti_join(outliers) %>%
+  ggplot() +
+  aes(x = snr, y = value, fill = endmember) +
+  geom_boxplot(outlier.shape = NA) +
+  ## ggbeeswarm::geom_quasirandom(
+  ##   cex = 0.2,
+  ##   dodge.width = 0.8
+  ## ) +
+  facet_grid(vars(variable), vars(atm), scales = "free_y")
+
+ggsave(
+  "figures/endmembers-nooutliers-byatm.png",
+  byatm,
+  width = 21, height = 11.5, dpi = 200
 )
 
 ##################################################
