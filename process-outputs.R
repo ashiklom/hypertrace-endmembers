@@ -3,6 +3,7 @@ library(dplyr)
 library(readr)
 library(purrr)
 library(tidyr)
+library(stringr)
 library(ggplot2)
 
 datadir <- dir_create("data")
@@ -33,7 +34,14 @@ dat <- dat_raw %>%
   mutate(parentdir = path_file(path_dir(file))) %>%
   extract(parentdir, c("endmember", "atm"), "^(.*)_endmembers_(.*)")
 
+outliers <- dat %>%
+  filter(r < 0.75)
+
+labels <- outliers %>%
+  mutate(label = glue::glue("az{az} zen{zen} vzen{vzen}"))
+
 dat_long <- dat %>%
+  left_join(labels) %>%
   pivot_longer(
     bias:std,
     names_to = "variable",
@@ -42,7 +50,8 @@ dat_long <- dat %>%
 
 plt <- ggplot(dat_long) +
   aes(x = snr, y = value, fill = endmember) +
-  geom_boxplot() +
+  geom_boxplot(outlier.shape = "x") +
+  ggrepel::geom_text_repel(aes(label = label), size = 2) +
   ## ggbeeswarm::geom_quasirandom(
   ##   cex = 1,
   ##   dodge.width = 0.8
@@ -53,5 +62,19 @@ if (interactive()) plt
 figdir <- dir_create("figures")
 ggsave(
   path(figdir, "endmembers.png"),
+  plt,
+  width = 10, height = 11, dpi = 300
+)
+
+plt2 <- plt %+%
+  (anti_join(dat_long, outliers)) +
+  ggbeeswarm::geom_quasirandom(
+    cex = 1,
+    dodge.width = 0.8
+  )
+
+ggsave(
+  path(figdir, "endmembers-nooutliers.png"),
+  plt2,
   width = 10, height = 11, dpi = 300
 )
