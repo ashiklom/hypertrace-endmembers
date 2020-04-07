@@ -7,19 +7,18 @@ library(tidyr)
 library(purrr)
 library(progress)
 library(fst)
+library(ggplot2)
 
-datadir <- here("data")
-
-# DL link: https://files.osf.io/v1/resources/kp82c/providers/osfstorage/5e878f1ef135350018d52ac7/?zip=
-
-em_dir <- path(datadir, "initial_endmembers")
-endmember_dirs <- dir_ls(em_dir)
-
+datadir <- here("data", "reference_small", "reference_small",
+                "data", "output")
 reflectance_files <- dir_ls(
-  endmember_dirs[4],
-  regexp = "_reflectance-[[:alnum:]]+$",
+  datadir,
+  regexp = "_state-[[:alnum:]]+$",
   recurse = TRUE
 )
+
+reflectance_files <- str_subset(reflectance_files, "az_90") %>%
+  str_subset("zen_0")
 
 read_refl_file <- function(fname, .pb = NULL) {
   if (!is.null(.pb)) .pb$tick()
@@ -27,7 +26,7 @@ read_refl_file <- function(fname, .pb = NULL) {
   fname_parsed <- str_match(fname_file, paste0(
     "atm_([[:digit:].]+)_az_([[:digit:].]+)_zen_([[:digit:].]+)_",
     "vzen_([[:digit:].]+)_",
-    "snr_noise_coeff_sbg_([[:alnum:]]+)\\.txt_reflectance-(.*)$"
+    "snr_noise_coeff_sbg_([[:alnum:]]+)\\.txt_[[:alpha:]]+-(.*)$"
   ))
   r <- raster::brick(fname)
   bandnames <- names(r)
@@ -60,9 +59,7 @@ read_refl_file <- function(fname, .pb = NULL) {
 pb <- progress_bar$new(total = length(reflectance_files))
 refldat <- map_dfr(reflectance_files, read_refl_file, .id = "file",
                    .pb = pb)
-write_fst(refldat, path(datadir, "veg-reflectance.fst"))
-
-library(ggplot2)
+write_fst(refldat, path(datadir, "simple-reflectance-state.fst"))
 
 refl_sub <- refldat %>%
   mutate(
@@ -75,12 +72,12 @@ refl_sub <- refldat %>%
   )
 
 refl_sub %>%
-  filter(az == 90, zen == 0, sample == 1) %>%
+  filter(az == 90, zen == 0, inversion == "simple") %>%
   ggplot() +
   aes(x = wavelength, y = reflectance,
       group = interaction(file, sample),
       color = snr) +
   geom_line() +
-  facet_grid(vars(inversion), vars(atm))
+  facet_grid(vars(sample), vars(atm))
 
-ggsave("~/Downloads/spectra.png")
+ggsave("~/Downloads/spectra-simple.png")
