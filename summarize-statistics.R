@@ -24,7 +24,8 @@ statcols <- cols(
 dat_raw <- map_dfr(statfiles, read_csv, .id = "file", col_types = statcols)
 
 dat <- dat_raw %>%
-  extract(file, "endmember", ".*_rfl_v2r2_(.*)_endmembers_.*")
+  extract(file, "endmember", ".*_rfl_v2r2_(.*)_endmembers_.*") %>%
+  mutate(snr = str_extract(snr, "cbe[[:digit:]]+"))
 
 outliers <- dat %>%
   filter(r < 0.75)
@@ -95,6 +96,19 @@ ggsave(
 if (FALSE){
 
   plt
+
+  dat %>%
+    mutate(snr = str_remove(snr, "cbe"),
+           atm = factor(atm)) %>%
+    filter(vzen == 0, inversion == "basemap",
+           atm == 0) %>%
+    ggplot() +
+    aes(x = snr, y = bias) +
+    geom_point() +
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    facet_grid(vars(endmember), vars(zen, az), scales = "free_y")
+
+  ggsave("~/Pictures/atm0-basemap.png")
 
   ggplot(dat) +
     aes(x = zen, y = az, color = bias) +

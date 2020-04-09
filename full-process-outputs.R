@@ -10,8 +10,6 @@ library(fst)
 
 datadir <- here("data")
 
-# DL link: https://files.osf.io/v1/resources/kp82c/providers/osfstorage/5e878f1ef135350018d52ac7/?zip=
-
 em_dir <- path(datadir, "initial_endmembers")
 endmember_dirs <- dir_ls(em_dir)
 
