@@ -91,22 +91,52 @@ ggsave(
   width = 21, height = 11.5, dpi = 200
 )
 
+figdir_many <- dir_create(path(figdir, "for-bp-many"))
+
+atm_fig <- function(dat, atm, stat) {
+  statsym <- rlang::sym(stat)
+  title <- paste0("Atmosphere ", atm)
+  fname <- path(figdir_many, sprintf("%s_atm%d.png", stat, atm))
+  dat_sub <- dat %>%
+    mutate(snr = str_remove(snr, "cbe"),
+           atm = factor(atm)) %>%
+    filter(vzen == 0, atm == {{atm}})
+  stopifnot(nrow(dat_sub) > 0)
+  plt <- ggplot(dat_sub) +
+    aes(x = snr, y = {{statsym}}) +
+    geom_point(aes(shape = inversion)) +
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    labs(x = "Instrument model", title = title) +
+    facet_grid(
+      vars(endmember), vars(zen, az),
+      scales = "free_y",
+      labeller = labeller(
+        endmember = label_value,
+        .default = label_both
+      )
+    ) +
+    theme_bw()
+  ggsave(fname, plt,
+         width = 14, height = 9.8, dpi = 300)
+  invisible(fname)
+}
+
+for (stat in c("bias", "rmse", "crmsd", "r", "std")) {
+  for (atm in 0:9) {
+    atm_fig(dat, atm, stat)
+  }
+}
+
 ##################################################
 # Do some other summary stats.
 if (FALSE){
 
-  plt
-
-  dat %>%
-    mutate(snr = str_remove(snr, "cbe"),
-           atm = factor(atm)) %>%
-    filter(vzen == 0, inversion == "basemap",
-           atm == 0) %>%
     ggplot() +
     aes(x = snr, y = bias) +
-    geom_point() +
+    geom_point(aes(shape = inversion)) +
     geom_hline(yintercept = 0, linetype = "dashed") +
-    facet_grid(vars(endmember), vars(zen, az), scales = "free_y")
+    facet_grid(vars(endmember), vars(zen, az), scales = "free_y") +
+    theme_bw()
 
   ggsave("~/Pictures/atm0-basemap.png")
 
